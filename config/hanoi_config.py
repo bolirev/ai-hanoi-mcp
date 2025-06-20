@@ -244,8 +244,46 @@ class HanoiConfig(BaseModel):
 
         if self.add_pseudocode:
             prompt += self.get_pseudocode_prompt()
-
+        if self.use_mcp:
+            prompt += self.get_mcp_prompt()
+        prompt += self.add_steps()
         return prompt
+
+    def add_steps(self) -> str:
+        """
+        Add the step by step prompt to the system prompt.
+        """
+        steps = """
+        Steps
+        """
+        next_step = 1
+        if self.use_mcp:
+            steps += f"""
+            {next_step}. Use the MCP servers above to answer the user query, not every MCP server will be relevant for a given query so you can choose which ones to invoke.  
+            """
+            next_step += 1
+        if self.add_pseudocode:
+            steps += f"""
+            {next_step}. Understand the relevant ALGORITHM, not every ALGORITHM will be relevant for a given query so you can choose which ones to invoke.
+            """
+            next_step += 1
+        steps += f"""
+            {next_step}. Answer the user query based on the information you have gathered.
+        """
+        next_step += 1
+        return steps
+
+    def get_mcp_prompt(self) -> str:
+        """
+        Get the MCP prompt for the Tower of Hanoi solver.
+
+        Returns:
+            str: MCP prompt
+        """
+        return """ Here is the description of the tools you can use to solve the puzzle:
+        - hanoi_solver(n: int): Solve the Tower of Hanoi puzzle
+            It returns the list of moves to solve the puzzle as a list of tuples (disk_id, from_peg, to_peg).
+        """
 
     def get_puzzle_message(self) -> str:
         """

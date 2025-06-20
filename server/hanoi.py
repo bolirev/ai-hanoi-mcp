@@ -15,7 +15,6 @@ def hanoi_solver(n: int) -> list[tuple[int, int, int]]:
     return moves
 
 
-@mcp.tool()
 def hanoi(n, moves, pegs, start_peg=0, auxiliary_peg=1, target_peg=2):
     """Solve the Tower of Hanoi puzzle"""
     if n == 1:
@@ -53,7 +52,11 @@ def hanoi(n, moves, pegs, start_peg=0, auxiliary_peg=1, target_peg=2):
     )
 
 
-if __name__ == "__main__":
+def run_mcp_server():
     logging.basicConfig(level=logging.INFO)
     logging.info("Starting Hanoi MCP server")
     mcp.run(transport="stdio")
+
+
+if __name__ == "__main__":
+    run_mcp_server()
