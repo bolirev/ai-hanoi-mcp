@@ -1,5 +1,6 @@
 # Create server parameters for stdio connection
 import asyncio
+import logging
 import os
 
 from dotenv import load_dotenv
@@ -38,11 +39,13 @@ async def run_agent(config: HanoiConfig = HanoiConfig()):
         async with ClientSession(read, write) as session:
             # Initialize the connection
             await session.initialize()
-
+            tools = await load_mcp_tools(session) if config.use_mcp else []
+            tools = config.filter_mcp_tools(tools)
+            logging.debug(f"Tools: {tools}")
             # Create and run the agent
             agent = create_react_agent(
                 model,
-                tools=await load_mcp_tools(session) if config.use_mcp else [],
+                tools=tools,
                 prompt=config.build_system_prompt(),
                 response_format=HanoiSolution,
             )

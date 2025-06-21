@@ -5,6 +5,7 @@ Contains system prompts and algorithm descriptions for the Tower of Hanoi solver
 
 from typing import List
 
+from langchain_core.tools import StructuredTool
 from pydantic import BaseModel, Field
 
 
@@ -143,6 +144,11 @@ class HanoiConfig(BaseModel):
         description="Whether to include pseudocode algorithm guidance in the system prompt",
     )
 
+    mcp_version: int = Field(
+        default=1,
+        description="The version of the MCP server to use",
+    )
+
     # Model configuration
     model_name: str = Field(
         default="gpt-4o", description="OpenAI model name to use for the solver"
@@ -157,6 +163,17 @@ class HanoiConfig(BaseModel):
         default=["server/hanoi.py"],
         description="Arguments to pass to the MCP server command",
     )
+
+    def filter_mcp_tools(self, tools: List[StructuredTool]) -> List[StructuredTool]:
+        """
+        Filter the MCP tools based on the configuration.
+        """
+        if self.mcp_version == 1:
+            return [tool for tool in tools if tool.name == "hanoi_solver"]
+        elif self.mcp_version == 2:
+            return [tool for tool in tools if tool.name == "hanoi_solver_dict_output"]
+        else:
+            raise ValueError(f"Invalid MCP version: {self.mcp_version}")
 
     def get_base_system_prompt(self) -> str:
         """
@@ -280,10 +297,16 @@ class HanoiConfig(BaseModel):
         Returns:
             str: MCP prompt
         """
-        return """ Here is the description of the tools you can use to solve the puzzle:
-        - hanoi_solver(n: int): Solve the Tower of Hanoi puzzle
-            It returns the list of moves to solve the puzzle as a list of tuples (disk_id, from_peg, to_peg).
-        """
+        if self.mcp_version == 1:
+            return """ Here is the description of the tools you can use to solve the puzzle:
+            - hanoi_solver(n: int): Solve the Tower of Hanoi puzzle
+                It returns the list of moves to solve the puzzle as a list of tuples (disk_id, from_peg, to_peg).
+            """
+        elif self.mcp_version == 2:
+            return """ Here is the description of the tools you can use to solve the puzzle:
+            - hanoi_solver_dict_output(n: int): Solve the Tower of Hanoi puzzle
+                It returns the list of moves to solve the puzzle as a list of dictionaries with the following keys: move_nb, disk, from_peg, to_peg.
+            """
 
     def get_puzzle_message(self) -> str:
         """
